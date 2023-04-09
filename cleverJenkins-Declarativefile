@@ -1,0 +1,45 @@
+pipeline{
+  agent {
+    label 'master'
+  } 
+  tools {
+    maven 'mavenBuild'
+  }
+  //options{}
+  //triggers{}
+  stages {
+    stage('1Clone'){
+      steps{
+        sh "echo 'cloning the latest application version' "
+        git "https://github.com/CleverDevop/maven-web-app"
+        sh "echo 'latest application version available for testing and build' "
+      }
+    }
+    stage('2TestBuild'){
+      steps{
+        sh "echo 'running JUnit-test-cases' "
+        sh "echo 'testing must passed to create artifacts ' "
+        sh "mvn clean package" 
+      }
+    }
+   stage('3CodeQualityAnalysis') {
+    steps{
+        sh "echo setup sonarQube authentication"
+        sh "echo 'Perfoming CodeQualityAnalysis' "
+        sh "mvn sonar:sonar"      
+    }
+   }
+   stage('4UploadArtifacts') {
+    steps{
+      sh "echo configure nexus authentication"
+      sh "mvn deploy"
+      sh "echo artifacts uploaded"
+    }
+   }
+  stage('5deploy') {
+    steps{
+          deploy adapters: [tomcat9(credentialsId: 'c136bb29-229b-49de-ba37-c0bfc091768b', path: '', url: 'http://54.144.152.153:8177/')], contextPath: null, war: 'target/*war' 
+        }
+   }
+  }
+}
